@@ -1,0 +1,18 @@
+# Ayara — Streamlit configuration (optional).
+# Place this at .streamlit/config.toml in your repo root, alongside your
+# (git-ignored) .streamlit/secrets.toml. This file is safe to commit.
+
+[theme]
+base = "light"
+primaryColor = "#2E7D32"          # Ayara green (buttons, sliders, accents)
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F6F4"
+textColor = "#1B2A22"
+
+[server]
+# The app enforces its own 7 MB receipt-upload cap in code; this is just an
+# outer safety bound for the uploader.
+maxUploadSize = 15
+
+[browser]
+gatherUsageStats = false

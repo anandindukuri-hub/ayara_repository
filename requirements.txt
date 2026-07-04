@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------------------
+# Ayara — Python dependencies for Streamlit Community Cloud / local runs
+# ---------------------------------------------------------------------------
+# IMPORTANT (Python version): the forecasting models were pickled with NumPy 1.x,
+# so this file pins numpy < 2. NumPy 1.26.4 has no Python 3.13 wheels — when you
+# deploy on Streamlit Cloud, choose **Python 3.12** (or 3.11) in "Advanced
+# settings". On 3.13 the install will fail.
+#
+# The scientific stack (numpy / scipy / pandas / statsmodels) is version-pinned
+# because those versions must be compatible with the pickled .pkl models. If a
+# model ever fails to load on the cloud, match these four to the versions from
+# the machine where you trained the models:  pip freeze | grep -Ei "numpy|scipy|pandas|statsmodels"
+# ---------------------------------------------------------------------------
+
+# --- Web app framework ---
+streamlit>=1.37
+
+# --- Data + plotting ---
+pandas==2.2.2
+numpy==1.26.4
+matplotlib>=3.7,<4
+joblib>=1.3
+
+# --- Forecasting models ---
+# The .pkl files are statsmodels ARIMA/state-space results objects. statsmodels
+# (and scipy) are REQUIRED to unpickle and run them, even though the app never
+# imports statsmodels directly — joblib.load rebuilds those objects.
+statsmodels==0.14.2
+scipy==1.13.1
+
+# --- Receipt OCR + AI (Google Gemini) ---
+google-genai>=1.0.0
+
+# --- Shared price dataset (Google Sheets) ---
+gspread>=6.0.0
+google-auth>=2.30.0
+
+# --- Images (logo + receipt handling) ---
+Pillow>=10.0.0
+
+# --- Timezone database (for the daily AI-quota reset via zoneinfo) ---
+# Guarantees zoneinfo works on any host, including ones without system tz data.
+tzdata>=2024.1

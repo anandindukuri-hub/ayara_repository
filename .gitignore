@@ -1,0 +1,60 @@
+# ===========================================================================
+# SECRETS — never commit these to GitHub
+# ===========================================================================
+# Streamlit secrets (service-account key, API keys). On Streamlit Cloud you add
+# these through the app's Settings -> Secrets UI instead of committing them.
+.streamlit/secrets.toml
+
+# Google service-account key files, if you keep one locally
+ayara_service_account.json
+*service_account*.json
+*-key.json
+
+# Any stray .env files
+.env
+.env.*
+
+# ===========================================================================
+# App-generated local files
+# ===========================================================================
+# Local per-day AI usage counter (created at runtime in the home directory,
+# but ignore any copy that lands in the repo)
+.ayara_gemini_usage.json
+
+# ===========================================================================
+# Large UNCOMPRESSED model pickles
+# ===========================================================================
+# Commit the compressed models (*.pkl.xz and *.pkl.xz.partNNN) instead — those
+# are what the app loads. This line ignores only the raw .pkl files (it does NOT
+# match .pkl.xz or .pkl.xz.part* because those don't end in ".pkl").
+*.pkl
+
+# ===========================================================================
+# Python
+# ===========================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ===========================================================================
+# OS / editor cruft
+# ===========================================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
