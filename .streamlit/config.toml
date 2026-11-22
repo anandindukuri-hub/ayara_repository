@@ -1,4 +1,4 @@
-# Ayara — Streamlit configuration (optional).
+# Ayara: Streamlit configuration (optional).
 # Place this at .streamlit/config.toml in your repo root, alongside your
 # (git-ignored) .streamlit/secrets.toml. This file is safe to commit.
 

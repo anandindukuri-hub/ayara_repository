@@ -1,5 +1,5 @@
 # ===========================================================================
-# SECRETS — never commit these to GitHub
+# SECRETS: never commit these to GitHub
 # ===========================================================================
 # Streamlit secrets (service-account key, API keys). On Streamlit Cloud you add
 # these through the app's Settings -> Secrets UI instead of committing them.
@@ -24,7 +24,7 @@ ayara_service_account.json
 # ===========================================================================
 # Large UNCOMPRESSED model pickles
 # ===========================================================================
-# Commit the compressed models (*.pkl.xz and *.pkl.xz.partNNN) instead — those
+# Commit the compressed models (*.pkl.xz and *.pkl.xz.partNNN) instead. Those
 # are what the app loads. This line ignores only the raw .pkl files (it does NOT
 # match .pkl.xz or .pkl.xz.part* because those don't end in ".pkl").
 *.pkl

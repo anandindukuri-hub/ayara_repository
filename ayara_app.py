@@ -156,6 +156,16 @@ def load_model(pkl_path):
     )
 
 
+def update_to_data_end(model, observed):
+    """The saved models were fit on data through July 2024. Before a forecast, the newer months in the
+    dataset are added to the model with its fitted settings unchanged (no refitting). Forecast steps then
+    start the month after the data ends, which is where the app counts them from."""
+    newer = observed[observed.index > model.data.row_labels[-1]]
+    if newer.empty:
+        return model
+    return model.append(newer.asfreq("MS"), refit=False)
+
+
 st.set_page_config(layout="wide", page_title="Ayara")
 
 
@@ -583,7 +593,7 @@ def build_cpi_interpretation_text(stats):
     sec = sector.lower() if sector else ""
     prod = product.lower()
 
-    lines = [f"### What this CPI means — {sector} {product}".strip()]
+    lines = [f"### What this CPI means: {sector} {product}".strip()]
 
     fv = stats.get("forecast_value")
     fdate = stats.get("forecast_date")
@@ -620,7 +630,7 @@ def build_cpi_interpretation_text(stats):
         seg = (f"Compared with the most recent actual reading of **{lv:.1f}** in **{ldate}**, "
                f"the model expects prices to {move} to **{fv:.1f}**")
         if pct_ch is not None:
-            seg += f" — a change of **{pct_ch:+.1f}%**"
+            seg += f", a change of **{pct_ch:+.1f}%**"
         if horizon:
             seg += f" over **{horizon} month{'s' if horizon != 1 else ''}**"
         seg += "."
@@ -645,8 +655,8 @@ def build_cpi_interpretation_text(stats):
         )
     if stats.get("is_volatile"):
         lines.append(
-            "Note that this category has been **fairly volatile** recently, so single-month "
-            "swings are common — keeping a small buffer stock and staying flexible on brands or "
+            "Note that this category has been **fairly volatile** recently. Single-month "
+            "swings are common. Keeping a small buffer stock and staying flexible on brands or "
             "sources helps absorb sudden spikes."
         )
 
@@ -657,8 +667,8 @@ def build_cpi_interpretation_text(stats):
         lines.append(tip)
 
     lines.append(
-        "_For planners and policymakers, the same signal points to acting ahead of the trend — "
-        "for example timing buffer-stock releases, easing supply bottlenecks, or targeting support "
+        "_For planners and policymakers, the same signal points to acting ahead of the trend: "
+        "for example timing buffer-stock releases, easing supply bottlenecks or targeting support "
         "to the households most affected._"
     )
     lines.append(
@@ -724,7 +734,7 @@ def render_cpi_interpretation(stats, context_key, button_label="Interpret this g
             st.divider()
             st.caption(
                 "Optional: generate AI-tailored advice for this exact forecast. Only the chart's "
-                "numbers are sent for processing — never your receipts or personal data."
+                "numbers are sent for processing, never your receipts or personal data."
             )
             lang = st.selectbox(
                 "Advice language",
@@ -1136,8 +1146,8 @@ def compute_community_adjustment(product):
     percentage nudge for the model forecast.
 
     Capacity rule: a category must have at least ``BLEND_MIN_RECEIPTS`` recent
-    receipts before a trend is even measured — below that there simply isn't
-    enough data for a meaningful trend, so the model forecast is shown as-is.
+    receipts before a trend is even measured. Below that there simply isn't
+    enough data for a meaningful trend. The model forecast is then shown as-is.
 
     Returns a dict. ``applied`` is False (and ``adj_pct`` is 0.0) whenever there
     is not enough clean signal to adjust. This function never raises.
@@ -1209,12 +1219,12 @@ def render_crowd_signal(product, model_direction=None, context_key=""):
             return
         if sig.get("n", 0) == 0:
             st.caption(
-                f"No community receipts logged for **{product}** yet — be the first "
+                f"No community receipts logged for **{product}** yet. Be the first "
                 "by uploading receipts under *Crowdsourcing Receipts*."
             )
             return
 
-        st.markdown(f"**Community price signal — {product}**")
+        st.markdown(f"**Community price signal: {product}**")
         c = st.columns(3)
         c[0].metric("Receipts logged", sig["n"])
         if sig.get("recent_avg") is not None:
@@ -1235,7 +1245,7 @@ def render_crowd_signal(product, model_direction=None, context_key=""):
                     msg += f" This **agrees** with the model's {model_direction} forecast, which adds confidence."
                 else:
                     msg += (
-                        f" This **differs** from the model's {model_direction} forecast — worth watching, "
+                        f" This **differs** from the model's {model_direction} forecast: worth watching, "
                         "as on-the-ground prices may be moving differently."
                     )
             st.markdown(msg)
@@ -1273,11 +1283,11 @@ This Privacy Policy describes how {PRIVACY_OPERATOR} ("we", "us", or "our") coll
 - You can use most of the Service without providing personal data, and you can withdraw consent at any time by not uploading files.
 
 ### 2. Information we collect
-**(a) Information you provide.** Receipt and invoice images, screenshots, and PDF files that you upload, and any information contained in them — which may include merchant names, dates, item descriptions, quantities, prices, totals, and taxes, and occasionally personal details printed on a receipt (for example a loyalty name, card last-four digits, or address). Please avoid uploading documents containing sensitive personal data about yourself or others, and redact such details where reasonably possible.
+**(a) Information you provide.** Receipt and invoice images, screenshots and PDF files that you upload and any information contained in them, which may include merchant names, dates, item descriptions, quantities, prices, totals and taxes and occasionally personal details printed on a receipt (for example a loyalty name, card last-four digits or address). Please avoid uploading documents containing sensitive personal data about yourself or others. Redact such details where reasonably possible.
 
 **(b) Location context (optional).** Where the Service associates prices with a place, it relies on store information, document metadata, or details you choose to enter. The Service is designed to avoid intrusive or continuous GPS tracking.
 
-**(c) Usage and technical data.** Limited operational data needed to run the Service, such as a local counter of AI requests made per day (stored on your own device to enforce rate limits — see Section 10), and standard information your browser or hosting environment generates (for example, error logs). The exact technical data depends on how and where the Service is deployed.
+**(c) Usage and technical data.** Limited operational data needed to run the Service, such as a local counter of AI requests made per day (stored on your own device to enforce rate limits; see Section 10) and standard information your browser or hosting environment generates (for example, error logs). The exact technical data depends on how and where the Service is deployed.
 
 **(d) We do not intentionally collect** government identifiers, full payment-card numbers, biometric data, or special-category data. Please do not submit such information.
 
@@ -1386,7 +1396,7 @@ DATA_SUMMARY_MD = """
 | Storage on our servers | None by default (optional operator-enabled logging aside) |
 | Selling your data | Never |
 | Location tracking | No intrusive/continuous GPS; place is inferred from the receipt or your input |
-| Local file on your device | `.ayara_gemini_usage.json` — only a date + request count, for rate limits |
+| Local file on your device | `.ayara_gemini_usage.json`: only a date + request count, for rate limits |
 | Your controls | Don't upload to withhold data; download to keep; close the session to discard |
 
 Please redact other people's personal details before uploading, and avoid submitting card numbers or government IDs.
@@ -1398,9 +1408,9 @@ def render_privacy_and_terms():
     st.caption(f"Last updated: {PRIVACY_LAST_UPDATED}")
     st.warning(
         "Template notice: This Privacy Policy and these Terms are a thorough, good-faith "
-        "template — not legal advice and not a guarantee of compliance. Before any public or "
+        "template, not legal advice and not a guarantee of compliance. Before any public or "
         "commercial release, have a qualified attorney review and adapt them for your "
-        "jurisdiction(s), your actual data flows, and any third-party services you enable."
+        "jurisdiction(s), your actual data flows and any third-party services you enable."
     )
     tab1, tab2, tab3 = st.tabs(["Privacy Policy", "Terms & Conditions", "Data Summary"])
     with tab1:
@@ -1445,20 +1455,20 @@ if page == "Home":
     safe_image(LOGO_PATH, caption="Ayara Logo")
 
     st.header("Project Overview")
-    st.write(""" This web-based platform turns everyday receipts into a credible source of economic insight, revealing the real cost of living at the neighborhood level. Users can upload photos of paper receipts, SMS confirmations, or PDF invoices, and the system processes them using optical character recognition and natural language processing to capture product names, quantities, prices, dates, and store details across varied formats and Indian languages. Each receipt is linked to a precise location through store information, metadata, or user input, without relying on intrusive GPS tracking. Prices are standardized for unit size, brand, and packaging, creating a fair basis for comparison between regions. The processed data is analyzed through advanced time-series models that detect both gradual inflation trends and sudden price spikes, producing a hyper-local inflation index that often reveals patterns hidden in national averages.
+    st.write(""" Ayara is a Python and Streamlit application that brings Indian Consumer Price Index data, time series forecasts, multilingual explanations and receipt extraction into one interface. Its current analytical scope is five spending categories across national rural, urban and combined sectors. I trained and integrated 15 forecasting models, one for each category and sector combination. The application loads those previously trained models to generate forecasts and model supplied intervals.
 
-The platform presents this information in formats tailored to its different audiences. Citizens receive clear cost-of-living summaries and intuitive visual cues that make complex trends easy to understand. Journalists and NGOs can explore interactive maps, identify unusual price surges, and download datasets for deeper analysis. Policymakers have access to comprehensive dashboards with regional breakdowns, inflation comparisons, and early warnings for essential goods. By crowdsourcing data while safeguarding privacy through secure anonymization methods, the project creates a transparent and accessible view of inflation. It shifts economic awareness from official reports alone to a real-time, community-driven perspective, enabling more informed decisions in households, newsrooms, and government offices alike. """)
+A separate receipt workflow uses Gemini to extract structured information from images and PDFs, assigns items to categories through local text rules and offers CSV export and optional contribution to Google Sheets. An experimental layer compares receipt price averages across two periods and applies a capped adjustment beside the original forecast. This layer does not retrain the models or constitute a geographically resolved inflation index. The proposed local index is a separate research objective. """)
 
     st.divider()
 
     st.header("About Me")
-    st.write("My name is Anand Varma Indukuri and I am an 18-year-old freshman at the University of Wisconsin–Madison studying Computer Science and Data Science. Growing up in India, I often witnessed the quiet ways inflation shaped daily life. Families would adjust their meals, postpone purchases, or stretch their budgets without fully realizing how much their expenses had grown. Official statistics rarely captured these everyday struggles, creating a gap between the numbers on paper and the reality people experienced. I wanted to create something that could close that gap by giving every household, regardless of income, a clear and honest picture of its cost of living. This project is also intended for those in government who make critical decisions, offering them precise and timely data from the ground. For me, it is not only a technical challenge but also a way to bring transparency, empowerment, and a stronger voice to communities.")
+    st.write("My name is Anand Varma Indukuri and I am a Computer Science and Data Science student at the University of Wisconsin Madison, class of 2029. Growing up in India, I often witnessed the quiet ways inflation shaped daily life. Families would adjust their meals, postpone purchases or stretch their budgets without fully realizing how much their expenses had grown. Official statistics rarely captured these everyday struggles, creating a gap between the numbers on paper and the reality people experienced. I wanted to create something that could close that gap by giving every household, regardless of income, a clear and honest picture of its cost of living. This project is also intended for those in government who make critical decisions, offering them precise and timely data from the ground. For me, it is not only a technical challenge but also a way to bring transparency, empowerment and a stronger voice to communities.")
 
 
 
 if page == "Analysis":
-    st.title("Analysis of India's Hyperlocal Inflation")
-    safe_image(INFLATION_IMG_PATH, caption="Hyperlocal Inflation")
+    st.title("Analysis of India's Inflation by Category")
+    safe_image(INFLATION_IMG_PATH, caption="Inflation")
 
     df = get_data()
 
@@ -1506,7 +1516,7 @@ if page == "Analysis":
     'Government': {
         'Fruits': """ 
     1. Long-Term Inflationary Trend
-     The CPI for fruits has consistently increased from approximately 103 in January 2013 to more than 150 in the most recent data, representing a cumulative rise of about 45 to 50 percent. This pattern indicates structural inflation rather than short-term fluctuations, caused by persistent factors such as rising input costs, higher fuel prices, increased labor wages, and inefficiencies in the supply chain. For the government, this trend signals the need for structural reforms in the fruit market. Measures could include expanding cold chain networks through the Mission for Integrated Development of Horticulture, enhancing market integration via the National Agriculture Market platform, and incentivizing private investment in modern storage and distribution facilities. These steps would reduce wastage, lower supply costs, and slow the rate of price increases, directly benefiting both producers and consumers while mitigating inflationary pressure on the broader economy.
+     The CPI for fruits has consistently increased from about 103 in January 2013 to about 213 in July 2025, the latest month in the data (Rural+Urban), a cumulative rise of about 107 percent. This pattern indicates structural inflation rather than short-term fluctuations, caused by persistent factors such as rising input costs, higher fuel prices, increased labor wages and inefficiencies in the supply chain. For the government, this trend signals the need for structural reforms in the fruit market. Measures could include expanding cold chain networks through the Mission for Integrated Development of Horticulture, enhancing market integration via the National Agriculture Market platform and incentivizing private investment in modern storage and distribution facilities. These steps would reduce wastage, lower supply costs and slow the rate of price increases, directly benefiting both producers and consumers while mitigating inflationary pressure on the broader economy.
  
     2. Seasonal Variation and Harvest Cycles
      The CPI trend for fruits displays recurring peaks and troughs that align with harvest and lean    periods. Prices tend to rise before harvest seasons when supply is scarce and drop when the market is saturated with fresh produce. For example, mango prices rise sharply in March and April before falling in June once the main crop enters the market. Apple prices in northern India increase between March and May as stored stocks diminish, followed by a decline in September and October during harvest. Citrus fruits such as oranges and sweet limes often see price increases during the monsoon when supply chains slow and availability decreases. Recognizing these cycles allows the government to act preemptively. Policy tools could include facilitating staggered planting to ensure more consistent supply throughout the year, releasing stored produce during shortage months, and enabling timely imports to stabilize domestic prices without harming local producers.
@@ -1523,19 +1533,19 @@ if page == "Analysis":
 6. Climate Change and Risk Forecasting
  The increasing intensity of CPI fluctuations in recent years suggests a growing influence of climate-related disruptions. Extreme rainfall, prolonged heatwaves, and hailstorms have all affected fruit yields, leading to sharp price changes. In 2023, apple production in Himachal Pradesh fell significantly due to reduced chill hours and unseasonal rains, causing prices in Delhi and Chandigarh to rise by over 20 percent within two months. To counter this risk, the government should integrate CPI data with weather forecasting and satellite-based crop monitoring to identify potential shortages well in advance. Investments in climate-resilient horticulture, micro-irrigation systems, and the promotion of drought- and heat-tolerant fruit varieties would strengthen supply resilience. Additionally, introducing index-based crop insurance schemes that provide payouts when fruit CPI exceeds a set threshold could protect both farmers and consumers from severe climate-driven price shocks. """,
         'Vegetables': """ Long-Term Inflationary Trend
- The CPI for vegetables has risen markedly from about 102 in January 2013 to roughly 160 in the latest period of your dataset (Rural+Urban, February 2021), a cumulative increase of approximately 55 to 60 percent. Urban markets show an even steeper climb, from about 103 to around 180 over the same span, while rural markets rise from about 102 to nearly 150. This sustained, multi-year increase indicates structural pressures in horticultural supply chains, including post-harvest losses, elevated logistics costs, and vulnerability to fuel and wage increases. For the government, the implication is to prioritize structural interventions in the vegetable value chain: accelerate cold-chain and pack-house capacity under the Mission for Integrated Development of Horticulture, expand market integration via e-NAM with time-bound onboarding of APMCs, and incentivize private investment in reefer transport and last-mile storage. These steps reduce spoilage, lower intermediation costs, and dampen price pass-throughs, moderating headline inflation without suppressing farmgate incomes.
+ The CPI for vegetables has risen markedly from about 102 in January 2013 to about 212 in July 2025, the latest month in the data (Rural+Urban), a cumulative increase of about 107 percent. Urban markets show an even steeper climb, from about 103 to about 243 over the same span, while rural markets rise from about 102 to about 196. This sustained, multi-year increase indicates structural pressures in horticultural supply chains, including post-harvest losses, elevated logistics costs and vulnerability to fuel and wage increases. For the government, the implication is to prioritize structural interventions in the vegetable value chain: accelerate cold-chain and pack-house capacity under the Mission for Integrated Development of Horticulture, expand market integration via e-NAM with time-bound onboarding of APMCs and incentivize private investment in reefer transport and last-mile storage. These steps reduce spoilage, lower intermediation costs and dampen price pass-throughs, moderating headline inflation without suppressing farmgate incomes.
 
 
 Seasonal Variation and Monsoon Sensitivity
- The CPI for vegetables exhibits pronounced seasonal amplitude, typically softening in late winter–early summer and rising through the monsoon and post-monsoon months. In your series, average levels are lower around March–May and higher from July through December, peaking most often in October–November. This pattern reflects harvest cycles for leafy and fruit vegetables and the heightened logistics frictions during monsoon months, when weather disruptions and road conditions constrain inflows to urban mandis. A policy response should blend supply smoothing and information flow: promote staggered sowing calendars through Krishi Vigyan Kendras for key staples like tomatoes, onions, and potatoes; operationalize district-level buffer norms to release stocks during lean weeks; and deploy real-time mandi arrival dashboards to pre-emptively redirect surplus from low-price zones to tightening markets.
+ The CPI for vegetables exhibits pronounced seasonal amplitude, typically softening in late winter-early summer and rising through the monsoon and post-monsoon months. In your series, average levels are lower around March-May and higher from July through December, peaking most often in October-November. This pattern reflects harvest cycles for leafy and fruit vegetables and the heightened logistics frictions during monsoon months, when weather disruptions and road conditions constrain inflows to urban mandis. A policy response should blend supply smoothing and information flow: promote staggered sowing calendars through Krishi Vigyan Kendras for key staples like tomatoes, onions and potatoes; operationalize district-level buffer norms to release stocks during lean weeks; and deploy real-time mandi arrival dashboards to pre-emptively redirect surplus from low-price zones to tightening markets.
 
 
 Price Shocks and Idiosyncratic Spikes
  Beyond seasonality, the dataset captures sharp year-on-year surges, notably in late 2019 and early 2020 when vegetable CPI spiked by more than 30 to 45 percent. These bursts align with onion-led shocks following late and excessive rains and localized flooding in major producing belts, as well as transient logistics disruptions near the onset of the pandemic. Such shocks are amplified in metros, where dependence on long-haul supply lines is higher. To manage these episodes, establish an integrated early-warning system that fuses IMD rainfall alerts, remote-sensing crop progress, and mandi inflow anomalies. This should trigger swift measures: temporary import duty adjustments or quota releases for onions and tomatoes, time-bound freight subsidies to clear chokepoints, and calibrated Strategic Buffer releases through NCCF/NAFED to stabilize retail prices while averting distress sales in producing districts.
 
 
-Urban–Rural Divergence and Volatility
- Your data show a persistent urban premium over rural vegetable prices—on average around 10 index points—with occasional gaps exceeding 30 points during stress periods. Urban volatility is also higher, reflecting longer supply chains and faster demand transmission. Meanwhile, rural markets can face sudden gluts and collapses when storage and aggregation are inadequate. Policy should narrow this gap by scaling rural aggregation (FPOs/SHGs) linked to assured urban off-take, financing decentralized cold rooms at block level, and improving rural road connectivity under PMGSY to reduce transit time variability. Standardizing transparent grading at source and widening direct-to-retail channels in cities will reduce multiple handling and compress urban markups.
+Urban-Rural Divergence and Volatility
+ Your data show a persistent urban premium over rural vegetable prices, on average around 10 index points, with occasional gaps exceeding 30 points during stress periods. Urban volatility is also higher, reflecting longer supply chains and faster demand transmission. Meanwhile, rural markets can face sudden gluts and collapses when storage and aggregation are inadequate. Policy should narrow this gap by scaling rural aggregation (FPOs/SHGs) linked to assured urban off-take, financing decentralized cold rooms at block level and improving rural road connectivity under PMGSY to reduce transit time variability. Standardizing transparent grading at source and widening direct-to-retail channels in cities will reduce multiple handling and compress urban markups.
 
 
 Contribution to Headline Inflation and Policy Coordination
@@ -1543,9 +1553,9 @@ Contribution to Headline Inflation and Policy Coordination
 
 
 Climate Change and Risk Forecasting
- The increasing amplitude and frequency of vegetable CPI spikes in recent years within your data suggest rising climate sensitivity—excess rainfall, heat waves, and unseasonal storms disrupt yields and storability, especially for perishables. A forward-looking approach should integrate crop-stage weather risk with market signals: scale micro-irrigation and protected cultivation for high-volatility vegetables, promote climate-resilient varieties through targeted breeder seed expansion, and link index-based insurance to market outcomes by adding CPI-or mandi-price triggers for specified districts. Coupled with satellite-based acreage nowcasts and truck-GPS feeds for corridor monitoring, this would allow pre-positioning of buffers and targeted logistics support weeks before shortages manifest in retail prices. """,
+ The increasing amplitude and frequency of vegetable CPI spikes in recent years within your data suggest rising climate sensitivity: excess rainfall, heat waves and unseasonal storms disrupt yields and storability, especially for perishables. A forward-looking approach should integrate crop-stage weather risk with market signals: scale micro-irrigation and protected cultivation for high-volatility vegetables, promote climate-resilient varieties through targeted breeder seed expansion and link index-based insurance to market outcomes by adding CPI-or mandi-price triggers for specified districts. Coupled with satellite-based acreage nowcasts and truck-GPS feeds for corridor monitoring, this would allow pre-positioning of buffers and targeted logistics support weeks before shortages manifest in retail prices. """,
         'Spices': """ Long-Term Inflationary Trend
-The CPI for spices has shown a steady upward trajectory from around 105 in January 2013 to approximately 165 in the latest data, representing a cumulative increase of about 55 to 60 percent. This long-term rise reflects structural factors, including persistent supply-demand imbalances, increased export demand from international markets, higher cultivation costs, and periodic shortages of key commodities like coriander, cumin, and turmeric. For the government, this indicates the need for supply-side reforms in the spice sector: expanding spice park infrastructure under the Spices Board, enhancing farmer access to precision irrigation and mechanized post-harvest processing, and strengthening linkages to domestic wholesale markets to reduce excessive dependence on a few trading hubs. These measures would reduce storage losses, stabilize prices, and increase domestic availability without curtailing export potential.
+The CPI for spices has shown a steady upward trajectory from about 103 in January 2013 to about 221 in July 2025, the latest month in the data (Rural+Urban), a cumulative increase of about 115 percent. This long-term rise reflects structural factors, including persistent supply-demand imbalances, increased export demand from international markets, higher cultivation costs and periodic shortages of key commodities like coriander, cumin and turmeric. For the government, this indicates the need for supply-side reforms in the spice sector: expanding spice park infrastructure under the Spices Board, strengthening linkages to domestic wholesale markets to reduce excessive dependence on a few trading hubs and enhancing farmer access to precision irrigation and mechanized post-harvest processing. These measures would reduce storage losses, stabilize prices and increase domestic availability without curtailing export potential.
 
 
 Seasonal Variation and Harvest Patterns
@@ -1553,11 +1563,11 @@ Seasonal Variation and Harvest Patterns
 
 
 Price Shocks and External Disruptions
- Beyond predictable cycles, the dataset shows sudden spikes—such as the sharp rise in late 2016 and mid-2020—driven by factors like unseasonal rains damaging standing crops, pest infestations, or surges in export orders. During the COVID-19 period, logistical bottlenecks and container shortages drove up spice prices in both domestic and export markets. The government could mitigate such volatility through a spice-specific early-warning and response framework, combining satellite crop health monitoring with export order tracking, and enabling rapid policy switches—like adjusting minimum export prices or extending freight subsidies to maintain domestic availability.
+ Beyond predictable cycles, the dataset shows sudden spikes, such as the sharp rise in late 2016 and mid-2020, driven by factors like unseasonal rains damaging standing crops, pest infestations or surges in export orders. During the COVID-19 period, logistical bottlenecks and container shortages drove up spice prices in both domestic and export markets. The government could mitigate such volatility through a spice-specific early-warning and response framework, combining satellite crop health monitoring with export order tracking and enabling rapid policy switches, like adjusting minimum export prices or extending freight subsidies to maintain domestic availability.
 
 
-Urban–Rural Price Divergence
- Your CPI data show that urban retail prices for spices are consistently 5–15 index points higher than rural prices, due largely to branding, packaging costs, and more fragmented retail chains in cities. In rural markets, prices tend to be lower but more volatile due to dependence on weekly haats and limited storage. Reducing these disparities requires government facilitation of direct procurement channels between rural producer groups and urban supermarkets, investment in spice grinding and packaging units at district level, and the adoption of standardized grading norms to reduce variability in quality and price.
+Urban-Rural Price Divergence
+ Your CPI data show that urban retail prices for spices are consistently 5-15 index points higher than rural prices, due largely to branding, packaging costs and more fragmented retail chains in cities. In rural markets, prices tend to be lower but more volatile due to dependence on weekly haats and limited storage. Reducing these disparities requires government facilitation of direct procurement channels between rural producer groups and urban supermarkets, investment in spice grinding and packaging units at district level and the adoption of standardized grading norms to reduce variability in quality and price.
 
 
 Contribution to Headline Inflation and Export Sensitivity
@@ -1568,7 +1578,7 @@ Climate Change and Production Risk
  Increasing variability in rainfall patterns, higher average temperatures, and greater pest pressure are emerging risks for spice production. In recent years, erratic monsoon distribution has delayed sowing in Gujarat’s cumin belt and reduced turmeric yields in Telangana. The government should integrate spice crop CPI trends with IMD’s seasonal forecasts to anticipate shortages, promote heat- and drought-tolerant spice varieties through public breeding programs, and expand coverage of weather-based crop insurance tailored for high-value spices. Additionally, investments in solar-powered dehydration and storage technology can reduce post-harvest losses during prolonged wet periods, ensuring that price spikes from climate shocks are minimized.
  """,
         'Fuel and light': """ Long-Term Inflationary Trend
- The CPI for Fuel and Light has risen from roughly 102 in January 2013 to about 160 in the latest available data, representing a cumulative increase of nearly 55 to 60 percent. This steady climb is largely structural, driven by global crude oil price trends, the depreciation of the rupee, periodic revisions in domestic fuel taxes, and gradual increases in electricity tariffs. The impact of regulated pricing means that CPI movements in this category often reflect policy decisions as much as market forces. For the government, this underscores the importance of diversifying the national energy mix—accelerating investments in renewable energy under the National Solar Mission, expanding LNG import and distribution capacity to cushion crude oil shocks, and implementing targeted subsidies for low-income households that ensure affordability without distorting market efficiency.
+ The CPI for Fuel and Light has risen from about 106 in January 2013 to about 181 in July 2025, the latest month in the data (Rural+Urban), a cumulative increase of about 71 percent. This steady climb is largely structural, driven by global crude oil price trends, the depreciation of the rupee, periodic revisions in domestic fuel taxes and gradual increases in electricity tariffs. The impact of regulated pricing means that CPI movements in this category often reflect policy decisions as much as market forces. For the government, this underscores the importance of diversifying the national energy mix: accelerating investments in renewable energy under the National Solar Mission, expanding LNG import and distribution capacity to cushion crude oil shocks and implementing targeted subsidies for low-income households that ensure affordability without distorting market efficiency.
 
 
 Seasonal Variation and Consumption Patterns
@@ -1579,7 +1589,7 @@ Price Shocks and External Disruptions
  The dataset reflects sudden spikes, such as in mid-2018 and late-2021, coinciding with global crude oil surges and revisions in excise duties. Other notable upticks align with currency depreciation episodes, which raise import costs for crude and LPG. In extreme cases, such as during early 2022 geopolitical tensions, wholesale and retail fuel prices in India rose sharply despite government excise cuts, highlighting supply chain and import dependency risks. The government can mitigate such shocks through a strategic petroleum reserve expansion, dynamic excise duty adjustment mechanisms tied to global benchmarks, and forward-contracting LNG imports to lock in stable prices.
 
 
-Urban–Rural Divergence and Infrastructure Gaps
+Urban-Rural Divergence and Infrastructure Gaps
  Rural CPI for Fuel and Light often exceeds urban levels for kerosene, firewood, and other solid fuels due to limited supply points and higher transport costs, while urban consumers pay more for electricity and piped gas services. The dataset shows this divergence widening during logistics disruptions, such as monsoon-related road inaccessibility in rural areas. To close this gap, the government should expand last-mile LPG delivery infrastructure under the Pradhan Mantri Ujjwala Yojana, strengthen rural electricity distribution via Deen Dayal Upadhyaya Gram Jyoti Yojana, and promote decentralized renewable systems (solar micro-grids, biogas plants) to reduce dependency on transported fuels.
 
 
@@ -1588,10 +1598,10 @@ Contribution to Headline Inflation and Policy Signalling
 
 
 Climate Change, Transition Risk, and Energy Security
- As India transitions towards a low-carbon economy, managing CPI stability during the shift is critical. The rollout of renewables, while reducing long-term fossil fuel exposure, must be balanced with short-term affordability. Extreme weather events—such as extended heatwaves—increase electricity demand and stress supply, driving tariff hikes. Meanwhile, global climate policies can influence fossil fuel availability and cost. To manage these transition risks, the government should integrate CPI trends into the National Energy Policy’s forecasting, accelerate grid-scale battery storage to stabilize renewable output, and promote electrification of cooking and transport to reduce LPG and petrol dependency. Such measures would enhance both price stability and energy resilience.
+ As India transitions towards a low-carbon economy, managing CPI stability during the shift is critical. The rollout of renewables, while reducing long-term fossil fuel exposure, must be balanced with short-term affordability. Extreme weather events, such as extended heatwaves, increase electricity demand and stress supply, driving tariff hikes. Meanwhile, global climate policies can influence fossil fuel availability and cost. To manage these transition risks, the government should integrate CPI trends into the National Energy Policy’s forecasting, accelerate grid-scale battery storage to stabilize renewable output and promote electrification of cooking and transport to reduce LPG and petrol dependency. Such measures would enhance both price stability and energy resilience.
  """,
         'Health': """ Long-Term Inflationary Trend
- The CPI for Health has shown a steady rise from about 102 in January 2013 to nearly 165 in the latest data, representing a cumulative increase of roughly 60 percent over the period. Unlike food and fuel, this trend is less influenced by short-term market volatility and more by structural cost drivers: rising prices of pharmaceuticals, higher consultation and diagnostic fees, increased cost of imported medical equipment, and wage growth in the healthcare workforce. For the government, this underscores the need for systemic reforms to moderate healthcare inflation—strengthening the Pradhan Mantri Jan Arogya Yojana (PM-JAY) to expand free coverage, promoting domestic manufacturing of medical devices under the Production Linked Incentive (PLI) scheme, and incentivizing generic drug adoption through Jan Aushadhi Kendras to lower retail medicine prices.
+ The CPI for Health has shown a steady rise from about 104 in January 2013 to about 204 in July 2025, the latest month in the data (Rural+Urban), a cumulative increase of about 96 percent over the period. Unlike food and fuel, this trend is less influenced by short-term market volatility and more by structural cost drivers: rising prices of pharmaceuticals, higher consultation and diagnostic fees, increased cost of imported medical equipment and wage growth in the healthcare workforce. For the government, this underscores the need for systemic reforms to moderate healthcare inflation: strengthening the Pradhan Mantri Jan Arogya Yojana (PM-JAY) to expand free coverage, promoting domestic manufacturing of medical devices under the Production Linked Incentive (PLI) scheme and incentivizing generic drug adoption through Jan Aushadhi Kendras to lower retail medicine prices.
 
 
 Seasonal Variation and Epidemic Cycles
@@ -1602,7 +1612,7 @@ Price Shocks and External Disruptions
  The dataset captures noticeable upward jumps, such as during the COVID-19 pandemic, when the costs of PPE, oxygen supply, hospital stays, and diagnostics surged sharply. Similar localized shocks have been observed when imported raw materials for drugs (Active Pharmaceutical Ingredients from China) faced supply chain disruptions. The government can pre-empt such situations by diversifying API sourcing, building national reserves of critical medical consumables, and mandating transparent hospital pricing guidelines during declared public health emergencies to prevent opportunistic overcharging.
 
 
-Urban–Rural Disparities and Accessibility Gaps
+Urban-Rural Disparities and Accessibility Gaps
  Urban areas often exhibit higher CPI levels for healthcare due to greater reliance on private providers, higher real estate costs for hospitals, and premium pricing for branded drugs. Rural CPI for health is typically lower but masks hidden costs such as travel to distant facilities and delays in treatment. Addressing these gaps requires government investment in rural health infrastructure under the Ayushman Bharat Health and Wellness Centres initiative, telemedicine expansion to bridge specialist shortages, and subsidized transportation for patients requiring referral care in district hospitals.
 
 
@@ -1632,7 +1642,7 @@ Climate Change and Emerging Health Risks
 6. Weather and Climate Play a Big Role:
  Fruits depend heavily on the weather. Heatwaves, floods, or heavy rains can reduce supply and increase prices. If the news predicts poor weather for fruit-growing regions, expect prices to rise soon. Families can buy and store more durable fruits in advance or switch to alternatives that are less affected by weather problems. """,
         'Vegetables': """ Vegetable Prices Have Increased Over Time
- Since 2013, vegetable prices have gone up by around 55–60 percent. This means your monthly vegetable spending is higher now than a decade ago. Buying vegetables in local markets or directly from farmers can often be cheaper than supermarkets.
+ Since 2013, vegetable prices have gone up by around 55-60 percent. This means your monthly vegetable spending is higher now than a decade ago. Buying vegetables in local markets or directly from farmers can often be cheaper than supermarkets.
 
 
 Prices Change With the Seasons
@@ -1658,7 +1668,7 @@ Weather Plays a Big Role
 
 
 Prices Change With the Harvest
- Spices are cheaper after harvest—for example, cumin and coriander prices drop between March and May—while prices rise in months with lower supply. Buying your annual stock soon after harvest can help you get better prices.
+ Spices are cheaper after harvest (for example, cumin and coriander prices drop between March and May), while prices rise in months with lower supply. Buying your annual stock soon after harvest can help you get better prices.
 
 
 Unexpected Price Jumps Can Happen
@@ -1681,7 +1691,7 @@ Weather Impacts Spice Supply
 
 
 Small Seasonal Changes Can Happen
- Fuel and electricity prices may go up slightly in certain months—like during winter in cold areas or during festivals when electricity use is high. Planning ahead by reducing usage in high-demand months can help keep bills under control.
+ Fuel and electricity prices may go up slightly in certain months, like during winter in cold areas or during festivals when electricity use is high. Planning ahead by reducing usage in high-demand months can help keep bills under control.
 
 
 Sudden Price Jumps Can Occur
@@ -1703,7 +1713,7 @@ Weather and Energy Use
 
 
 Seasonal Illnesses Can Affect Your Budget
- Medical expenses often rise during certain times of the year—like the monsoon, when diseases such as dengue and malaria become more common, or in winter, when respiratory illnesses increase. Families can prepare by keeping essential medicines and basic health supplies at home before these seasons start.
+ Medical expenses often rise during certain times of the year, like the monsoon (when diseases such as dengue and malaria become more common) or in winter (when respiratory illnesses increase). Families can prepare by keeping essential medicines and basic health supplies at home before these seasons start.
 
 
 Unexpected Medical Price Jumps
@@ -1719,7 +1729,7 @@ Health Costs Affect the Cost of Living
 
 
 Weather and Climate Can Impact Health Spending
- Extreme heat, heavy rains, or floods can lead to more illnesses, which can raise medical costs. If bad weather is predicted in your area, it’s smart to take preventive health steps—like boiling water, using mosquito nets, or wearing masks—to reduce the risk of falling sick and spending more on treatment. """,
+ Extreme heat, heavy rains or floods can lead to more illnesses, which can raise medical costs. If bad weather is predicted in your area, it’s smart to take preventive health steps (like boiling water, using mosquito nets or wearing masks) to reduce the risk of falling sick and spending more on treatment. """,
     }
 }
 
@@ -1759,8 +1769,8 @@ Weather and Climate Can Impact Health Spending
                 subtitle = ", ".join(chosen_categories)
             else:
                 subtitle = "All 5 categories"
-            lang_note = f" — in {language}" if language != "English" else ""
-            st.subheader(f"Analysis for: {chosen_audience} — {subtitle}{lang_note}")
+            lang_note = f" (in {language})" if language != "English" else ""
+            st.subheader(f"Analysis for: {chosen_audience} • {subtitle}{lang_note}")
 
             for cat in chosen_categories:
                 with st.expander(f"{chosen_audience} • {cat}", expanded=True):
@@ -1879,7 +1889,7 @@ if page == "Inflation Forecasting":
         else:
             model_fp = MODEL_PATHS[(product, sector)]
             try:
-                model = load_model(model_fp)
+                model = update_to_data_end(load_model(model_fp), sector_df[product])
                 forecasts = model.get_forecast(steps=month_diff)
 
                 # Shared pieces used by both the output and the interpreter.
@@ -1958,7 +1968,7 @@ if page == "Inflation Forecasting":
                         f"{product.lower()} show prices **{_trend}**, so the model forecast is nudged "
                         f"**{abs(_adj['adj_pct']):.1f}% {_dir_word}** (from {_adj['n_recent']} recent "
                         f"receipt item(s), weighted for confidence and capped at ±{BLEND_MAX_ADJ_PCT:.0f}%). "
-                        "The model's own forecast is shown unchanged alongside it — the adjusted figure is a "
+                        "The model's own forecast is shown unchanged alongside it. The adjusted figure is a "
                         "real-world overlay you can weigh yourself, not a change to the underlying model."
                     )
                 elif _adj.get("reason") == "too_few_recent" and _adj.get("n_recent", 0) >= 1:
@@ -1970,16 +1980,16 @@ if page == "Inflation Forecasting":
                         "automatically. Until then, the forecast above is the model's own output."
                     )
 
-                # CPI interpreter — dynamic per graph/value, works offline.
+                # CPI interpreter: dynamic per graph/value, works offline.
                 _ctx = f"{product}|{sector}|{selected_month_start:%Y-%m}|{forecast_type}"
                 _btn = (
-                    "Interpret this graph — what does this CPI mean?"
+                    "Interpret this graph: what does this CPI mean?"
                     if forecast_type == "Over time"
-                    else "Know more — what does this CPI value mean?"
+                    else "Know more: what does this CPI value mean?"
                 )
                 render_cpi_interpretation(cpi_stats, context_key=_ctx, button_label=_btn)
 
-                # Community price signal from the shared receipts sheet — a
+                # Community price signal from the shared receipts sheet: a
                 # real-world cross-check that can inform how you read the forecast.
                 render_crowd_signal(
                     product,
@@ -2011,8 +2021,8 @@ if page == "Crowdsourcing Receipts":
         st.session_state.privacy_consent = False
 
     st.info(
-        "**Before you upload — please read.** Receipts can contain personal "
-        "information (your name, card details, location, or other people's "
+        "**Before you upload, please read.** Receipts can contain personal "
+        "information (your name, card details, location or other people's "
         "details). Ayara processes each file **only for this session** to extract "
         "prices and does not store your receipts afterwards. To read them "
         "automatically, the file is sent to Google's Gemini AI service for "
@@ -2050,7 +2060,7 @@ if page == "Crowdsourcing Receipts":
     st.caption(f"Free-tier usage today: {_used}/{_cap} AI requests (auto-limited to protect your quota).")
 
     uploaded = st.file_uploader(
-        "Upload receipt(s) — photo, screenshot, or PDF",
+        "Upload receipt(s): photo, screenshot or PDF",
         type=["png", "jpg", "jpeg", "pdf"],
         accept_multiple_files=True,
     )
@@ -2083,7 +2093,7 @@ if page == "Crowdsourcing Receipts":
             
             if is_pdf:
                 send_bytes, mime = raw_bytes, "application/pdf"
-                st.caption("PDF detected — sending to the reader.")
+                st.caption("PDF detected, sending to the reader.")
             elif PIL_AVAILABLE:
                 try:
                     img = Image.open(io.BytesIO(raw_bytes))
@@ -2112,11 +2122,11 @@ if page == "Crowdsourcing Receipts":
 
             
             c1, c2, c3 = st.columns(3)
-            c1.metric("Merchant", str(data.get("merchant_name") or "—"))
-            c2.metric("Date", str(data.get("transaction_date") or "—"))
+            c1.metric("Merchant", str(data.get("merchant_name") or "-"))
+            c2.metric("Date", str(data.get("transaction_date") or "-"))
             total = data.get("total")
             currency = data.get("currency") or ""
-            c3.metric("Total", f"{currency} {total}".strip() if total is not None else "—")
+            c3.metric("Total", f"{currency} {total}".strip() if total is not None else "-")
 
             
             items = data.get("items") or []
@@ -2222,10 +2232,10 @@ if page == "Crowdsourcing Receipts":
                             )
                             st.success(
                                 f"Saved {_res['appended']} new item(s) to the shared sheet"
-                                + (f" — {_by_cat}." if _by_cat else ".")
+                                + (f" ({_by_cat})." if _by_cat else ".")
                             )
                         else:
-                            st.info("Nothing new to add — these items were already in the sheet.")
+                            st.info("Nothing new to add: these items were already in the sheet.")
                         _notes = []
                         if _res["skipped_dupes"]:
                             _notes.append(f"{_res['skipped_dupes']} duplicate(s) skipped")

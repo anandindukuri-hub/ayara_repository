@@ -1,108 +1,84 @@
-# Ayara — Hyperlocal CPI & Inflation Insights
+# Ayara
 
-Ayara is a Streamlit app for exploring India's Consumer Price Index (CPI): it
-shows inflation analysis by category, produces CPI forecasts from pre-trained
-time-series models, reads prices off uploaded receipts, and folds those
-community-submitted prices back into the forecast as a capped, real-world
-adjustment.
+Ayara is a Streamlit app that forecasts Indian inflation for five spending categories with 15 ARIMA models and explains the trends for households and for government readers.
 
-## Repository layout
+**Live app:** [ayara1.streamlit.app](https://ayara1.streamlit.app). If the app says it is asleep, click the wake button and give it a minute.
 
-Streamlit Community Cloud runs `streamlit run` from the repository root, so the
-app's `Resources` folder must live **inside the repo** at the root (the app
-looks for `./Resources` when the usual `~/Documents/Resources` path isn't
-present, e.g. on the cloud):
+**White paper:** [docs/whitepaper.md](docs/whitepaper.md) covers the data, the models, the reported results and the limits.
 
-```
-your-repo/
-├── ayara_app.py                # the app (entrypoint)
-├── requirements.txt            # Python dependencies
-├── .gitignore
-├── .streamlit/
-│   ├── config.toml             # theme (safe to commit)
-│   └── secrets.toml            # secrets — NOT committed (see below)
-└── Resources/
-    ├── Ayara.png
-    ├── Inflation.jpg
-    ├── Revised Final Dataset.csv
-    └── Time Series Models/
-        ├── vegetables-urban.pkl.xz
-        ├── vegetables-rural.pkl.xz
-        ├── Vegetables-Total.pkl.xz
-        ├── Fuel_and_light-urban.pkl.xz
-        ├── Fuel_and_light-rural.pkl.xz
-        ├── Fuel_and_light-total.pkl.xz
-        ├── Health-urban.pkl.xz
-        ├── Health-rural.pkl.xz
-        ├── Health-Total.pkl.xz
-        ├── Fruits-urban.pkl.xz
-        ├── Fruits-Total.pkl.xz
-        ├── Spices-Urban.pkl.xz
-        ├── spices-rural.pkl.xz
-        ├── spices-total.pkl.xz
-        ├── Fruits-Rural.pkl.xz.part001   # Fruits-Rural is split into 2 parts
-        └── Fruits-Rural.pkl.xz.part002   # — commit BOTH
+Ayara began during my Data Scientist internship at Crimson Education (July to December 2025) and continued as an independent project afterward.
+
+## How it works
+
+```mermaid
+flowchart TD
+    cpi["Monthly CPI table"] --> choose["Pick a category, a sector and a month"]
+    choose --> model["Saved ARIMA model for that category and sector"]
+    model --> forecast["Forecast and its interval"]
+    receipt["Receipt photo or PDF"] --> read["Gemini reads the merchant, date and items"]
+    read --> sort["Keyword rules sort each item into a category"]
+    sort --> csv["CSV download"]
+    sort --> sheet["Shared Google Sheet"]
+    sheet --> adjust["Capped adjustment shown beside the forecast"]
+    forecast --> adjust
 ```
 
-The models are stored compressed (`.pkl.xz`, or split `.pkl.xz.partNNN` chunks)
-so every file stays under GitHub's 25 MB browser-upload limit. The app
-decompresses them in memory at load time; the decompressed bytes are identical
-to the original `.pkl` files, so forecasts are unchanged. You do **not** need to
-commit the large raw `.pkl` files (they're git-ignored).
+- **Data.** A monthly Consumer Price Index table from January 2013 to July 2025 (base 2012 = 100). It covers five categories (Fuel and light, Fruits, Vegetables, Spices and Health), each as a rural, an urban and a combined series. It sits in `Resources/Revised Final Dataset.csv`.
+- **Forecasts.** One saved statsmodels ARIMA model per category and sector, 15 in all, stored compressed in `Resources/Time Series Models/`. For a month inside the data, the app shows the recorded value. For a later month, it loads the matching model and shows the forecast as one value or as a chart with the model's interval.
+- **Explanations.** The Analysis page has written analysis for each category, one version for government readers and one for households. Gemini can shorten it or translate it into Hindi or Telugu. Under each forecast, a button explains what the value means in everyday terms. That part runs in the app with no AI call.
+- **Receipts (optional).** Upload a receipt photo or PDF and Gemini reads the merchant, the date and each line item. Local keyword rules put every item in one of the five categories or in Other. The table can be downloaded as CSV or saved to a shared Google Sheet.
+- **Community signal (experimental).** Receipts saved to the sheet feed a small, capped adjustment that the app shows beside the model's forecast, never in place of it. It only appears once a category has enough recent receipt items. The exact rule is in [section 4.2 of the white paper](docs/whitepaper.md#42-how-the-adjustment-is-calculated).
 
-## Deploying on Streamlit Community Cloud
+## Results
 
-1. Push this repository to GitHub (including the `Resources/` folder and the
-   compressed model files).
-2. On https://share.streamlit.io create a new app pointing at your repo, branch,
-   and `ayara_app.py`.
-3. In **Advanced settings**, choose **Python 3.12** (or 3.11). This is required:
-   the models need `numpy` 1.x, which has no Python 3.13 wheels.
-4. Add your secrets in **Settings → Secrets** (see below). Deploy.
+No accuracy table here yet. The white paper reports a twelve month holdout error for each of the 15 models ([section 3.2](docs/whitepaper.md#32-reported-model-results)). Those figures come from the original project paper and have not been rerun. A rerun next to a simple baseline comes next: a seasonal naive forecast, which predicts each month with the value from the same month a year earlier.
 
-## Secrets
+## Limits
 
-Secrets are never committed. Locally they live in `.streamlit/secrets.toml`; on
-the cloud you paste the same content into **Settings → Secrets**. The app uses:
+- No baseline yet. The reported errors have not been compared with a simple seasonal forecast. Without that comparison they do not show how much the models add.
+- The reported results are not reproduced here. This repo holds the app and the saved models, not the data preparation or the training code.
+- Rural, urban and combined are national series. Ayara does not measure prices for a city, a district or a household. A local price index is future research.
+- The receipt adjustment is an experiment. Its thresholds are design choices, not tested values. It has not been shown to improve forecasts.
+- Gemini's receipt reading, translations and summaries can contain errors. Their accuracy has not been measured.
+- The saved models were fit on data through July 2024. Before each forecast the app adds the twelve newer months (through July 2025) without changing the fitted settings. Forecasts start in August 2025.
+- The 15 models are separate. Nothing keeps the rural, urban and combined forecasts consistent with each other. The models are not retrained automatically.
 
-```toml
-# Google Gemini (receipt OCR + AI features)
-GEMINI_API_KEY = "your-key"
+## Next steps
 
-# Google service account (writing/reading the shared price Google Sheet)
-[gcp_service_account]
-type = "service_account"
-project_id = "..."
-private_key_id = "..."
-private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-client_email = "...@....iam.gserviceaccount.com"
-client_id = "..."
-auth_uri = "https://accounts.google.com/o/oauth2/auth"
-token_uri = "https://oauth2.googleapis.com/token"
-auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
-client_x509_cert_url = "..."
-universe_domain = "googleapis.com"
-```
+- Rerun the twelve month holdout for all 15 models next to the seasonal naive baseline and add the results table to this page.
+- The longer research plan, including what a real local price index would need, is in [section 6 of the white paper](docs/whitepaper.md#6-research-direction-and-next-validation-work).
 
-Also remember to **share the Google Sheet** with the service account's
-`client_email` (Editor access), or writes/reads will be refused.
+## Run it locally
 
-## Running locally
+Tested with Python 3.12. The pinned NumPy 1.26.4 has no wheels for Python 3.13.
 
 ```bash
-pip install -r requirements.txt
-streamlit run ayara_app.py
+git clone https://github.com/anandindukuri-hub/ayara_repository.git
+cd ayara_repository
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+AYARA_RESOURCES_DIR="$PWD/Resources" .venv/bin/streamlit run ayara_app.py
 ```
 
-Run it from the repository root so `./Resources` resolves correctly. Locally you
-can keep either the compressed models or the original `.pkl` files in
-`Resources/Time Series Models/` — the app checks for a plain `.pkl` first, then
-the compressed forms.
+On a Mac with an Intel build of Python, pip can fail to build cryptography. Adding `--only-binary=cryptography` to the install line fixes that.
 
-## Notes
+`AYARA_RESOURCES_DIR` points the app at the `Resources/` folder in this repo. Without it the app looks in `~/Documents/Resources` first.
 
-- `requirements.txt` pins `numpy`, `scipy`, `pandas`, and `statsmodels` for
-  compatibility with the pickled models. If a model fails to load, match those
-  four to the versions from the machine where you trained them.
-- AI (Gemini) and Google Sheets features degrade gracefully: if their keys
-  aren't configured, the rest of the app still runs.
+The charts, the forecasts and the explanations in English work with no keys. Receipt reading and translation need a Gemini API key. Saving receipts needs a Google service account. [docs/DEPLOY.md](docs/DEPLOY.md) shows where both go and how to deploy on Streamlit Community Cloud.
+
+## What is in this repo
+
+- `ayara_app.py`: the whole app.
+- `Resources/`: the CPI table, the 15 saved models and two images.
+- `docs/whitepaper.md`: the public technical write up.
+- `docs/DEPLOY.md`: the deploy and secrets guide.
+
+## Data and credits
+
+- CPI data: India's monthly Consumer Price Index (base 2012 = 100) from the National Statistical Office ([CPI portal](https://cpi.mospi.gov.in/)), accessed through the Reserve Bank of India's Database on Indian Economy ([DBIE](https://data.rbi.org.in/)).
+- Built with Streamlit, pandas, statsmodels and matplotlib. Gemini reads receipts and translates text. Google Sheets stores shared receipt rows.
+- The source of `Resources/Inflation.jpg` is not recorded yet.
+
+## License
+
+[MIT](LICENSE). MIT covers the code. The CPI data and the images in Resources/ stay under their owners' terms.

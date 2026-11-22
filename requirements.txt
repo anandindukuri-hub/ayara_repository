@@ -1,8 +1,8 @@
 # ---------------------------------------------------------------------------
-# Ayara — Python dependencies for Streamlit Community Cloud / local runs
+# Ayara: Python dependencies for Streamlit Community Cloud / local runs
 # ---------------------------------------------------------------------------
-# IMPORTANT (Python version): the forecasting models were pickled with NumPy 1.x,
-# so this file pins numpy < 2. NumPy 1.26.4 has no Python 3.13 wheels — when you
+# IMPORTANT (Python version): the forecasting models were pickled with NumPy 1.x.
+# So this file pins numpy < 2. NumPy 1.26.4 has no Python 3.13 wheels. When you
 # deploy on Streamlit Cloud, choose **Python 3.12** (or 3.11) in "Advanced
 # settings". On 3.13 the install will fail.
 #
@@ -24,7 +24,7 @@ joblib>=1.3
 # --- Forecasting models ---
 # The .pkl files are statsmodels ARIMA/state-space results objects. statsmodels
 # (and scipy) are REQUIRED to unpickle and run them, even though the app never
-# imports statsmodels directly — joblib.load rebuilds those objects.
+# imports statsmodels directly: joblib.load rebuilds those objects.
 statsmodels==0.14.2
 scipy==1.13.1
 
