@@ -31,12 +31,13 @@ flowchart TD
 
 ## Results
 
-No accuracy table here yet. The white paper reports a twelve month holdout error for each of the 15 models ([section 3.2](docs/whitepaper.md#32-reported-model-results)). Those figures come from the original project paper and have not been rerun. A rerun next to a simple baseline comes next: a seasonal naive forecast, which predicts each month with the value from the same month a year earlier.
+The white paper reports a twelve month holdout error for each of the 15 models ([section 3.2](docs/whitepaper.md#32-reported-model-results)). The notebooks in [training/](training/) rebuild every saved model exactly. Fourteen of the 15 errors match the paper to two decimals (Health Rural comes out at 0.43 against the reported 0.40). A simple baseline comes next: a seasonal naive forecast, which predicts each month with the value from the same month a year earlier.
 
 ## Limits
 
 - No baseline yet. The reported errors have not been compared with a simple seasonal forecast. Without that comparison they do not show how much the models add.
-- The reported results are not reproduced here. This repo holds the app and the saved models, not the data preparation or the training code.
+- The data preparation that built the CPI table is not in this repo. The training notebooks start from the finished table.
+- Some chosen model settings were picked by hand after the grid search. A few sit outside the searched range ([training/README.md](training/README.md)).
 - Rural, urban and combined are national series. Ayara does not measure prices for a city, a district or a household. A local price index is future research.
 - The receipt adjustment is an experiment. Its thresholds are design choices, not tested values. It has not been shown to improve forecasts.
 - Gemini's receipt reading, translations, summaries and forecast advice can contain errors. Their accuracy has not been measured.
@@ -45,7 +46,7 @@ No accuracy table here yet. The white paper reports a twelve month holdout error
 
 ## Next steps
 
-- Rerun the twelve month holdout for all 15 models next to the seasonal naive baseline and add the results table to this page.
+- Compare the twelve month holdout of all 15 models with the seasonal naive baseline and add the results table to this page.
 - The longer research plan, including what a real local price index would need, is in [section 6 of the white paper](docs/whitepaper.md#6-research-direction-and-next-validation-work).
 
 ## Run it locally
@@ -70,6 +71,7 @@ The charts, the forecasts and the explanations in English work with no keys. Rec
 
 - `ayara_app.py`: the whole app.
 - `Resources/`: the CPI table, the 15 saved models and two images.
+- `training/`: the 15 notebooks that fit and saved the models, with a [short guide](training/README.md).
 - `docs/whitepaper.md`: the public technical write up.
 - `docs/DEPLOY.md`: the deploy and secrets guide.
 
