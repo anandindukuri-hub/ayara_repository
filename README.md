@@ -75,7 +75,7 @@ The charts, the forecasts and the explanations in English work with no keys. Rec
 
 ## Data and credits
 
-- CPI data: India's monthly Consumer Price Index (base 2012 = 100) from the National Statistical Office ([CPI portal](https://cpi.mospi.gov.in/)), accessed through the Reserve Bank of India's Database on Indian Economy ([DBIE](https://data.rbi.org.in/)).
+- CPI data: India's monthly Consumer Price Index (base 2012 = 100) from the National Statistical Office ([MOSPI](https://www.mospi.gov.in/)), accessed through the Reserve Bank of India's Database on Indian Economy ([DBIE](https://data.rbi.org.in/)).
 - Built with Streamlit, pandas, statsmodels and matplotlib. Gemini reads receipts and translates text. Google Sheets stores shared receipt rows.
 - The source of `Resources/Inflation.jpg` is not recorded yet.
 

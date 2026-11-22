@@ -172,7 +172,7 @@ Ayara's demonstrated contribution is the integration of forecasting, receipt ext
 
 **[2]** Indukuri, Anand. *Ayara application source*. Python and Streamlit implementation reviewed for this edition, September 2026. Supports the descriptions of current data loading, model inference, Gemini extraction, item categorization, optional Sheets contribution, receipt adjustment and data handling controls. [Live application](https://ayara1.streamlit.app/).
 
-**[3]** Ministry of Statistics and Programme Implementation, National Statistical Office. *Consumer Price Index, base 2012 = 100: monthly releases and methodology*. The official statistical source identified in the original research report. [CPI portal](https://cpi.mospi.gov.in/).
+**[3]** Ministry of Statistics and Programme Implementation, National Statistical Office. *Consumer Price Index, base 2012 = 100: monthly releases and methodology*. The official statistical source identified in the original research report. [MOSPI](https://www.mospi.gov.in/).
 
 **[4]** Reserve Bank of India. *Database on Indian Economy: Prices and Wages, Consumer Price Index, Rural, Urban and Combined*. The dataset access source identified in the original research report. [DBIE portal](https://data.rbi.org.in/).
 
