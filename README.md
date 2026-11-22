@@ -25,7 +25,7 @@ flowchart TD
 
 - **Data.** A monthly Consumer Price Index table from January 2013 to July 2025 (base 2012 = 100). It covers five categories (Fuel and light, Fruits, Vegetables, Spices and Health), each as a rural, an urban and a combined series. It sits in `Resources/Revised Final Dataset.csv`.
 - **Forecasts.** One saved statsmodels ARIMA model per category and sector, 15 in all, stored compressed in `Resources/Time Series Models/`. For a month inside the data, the app shows the recorded value. For a later month, it loads the matching model and shows the forecast as one value or as a chart with the model's interval.
-- **Explanations.** The Analysis page has written analysis for each category, one version for government readers and one for households. Gemini can shorten it or translate it into Hindi or Telugu. Under each forecast, a button explains what the value means in everyday terms. That part runs in the app with no AI call.
+- **Explanations.** The Analysis page has written analysis for each category, one version for government readers and one for households. Gemini can shorten it or translate it into Hindi or Telugu. Under each forecast, a button explains what the value means in everyday terms. That part runs in the app with no AI call. With a Gemini key set, a second button can add advice written by Gemini, using only the chart's numbers.
 - **Receipts (optional).** Upload a receipt photo or PDF and Gemini reads the merchant, the date and each line item. Local keyword rules put every item in one of the five categories or in Other. The table can be downloaded as CSV or saved to a shared Google Sheet.
 - **Community signal (experimental).** Receipts saved to the sheet feed a small, capped adjustment that the app shows beside the model's forecast, never in place of it. It only appears once a category has enough recent receipt items. The exact rule is in [section 4.2 of the white paper](docs/whitepaper.md#42-how-the-adjustment-is-calculated).
 
@@ -39,7 +39,7 @@ No accuracy table here yet. The white paper reports a twelve month holdout error
 - The reported results are not reproduced here. This repo holds the app and the saved models, not the data preparation or the training code.
 - Rural, urban and combined are national series. Ayara does not measure prices for a city, a district or a household. A local price index is future research.
 - The receipt adjustment is an experiment. Its thresholds are design choices, not tested values. It has not been shown to improve forecasts.
-- Gemini's receipt reading, translations and summaries can contain errors. Their accuracy has not been measured.
+- Gemini's receipt reading, translations, summaries and forecast advice can contain errors. Their accuracy has not been measured.
 - The saved models were fit on data through July 2024. Before each forecast the app adds the twelve newer months (through July 2025) without changing the fitted settings. Forecasts start in August 2025.
 - The 15 models are separate. Nothing keeps the rural, urban and combined forecasts consistent with each other. The models are not retrained automatically.
 
@@ -64,7 +64,7 @@ On a Mac with an Intel build of Python, pip can fail to build cryptography. Addi
 
 `AYARA_RESOURCES_DIR` points the app at the `Resources/` folder in this repo. Without it the app looks in `~/Documents/Resources` first.
 
-The charts, the forecasts and the explanations in English work with no keys. Receipt reading and translation need a Gemini API key. Saving receipts needs a Google service account. [docs/DEPLOY.md](docs/DEPLOY.md) shows where both go and how to deploy on Streamlit Community Cloud.
+The charts, the forecasts and the explanations in English work with no keys. Receipt reading, translation and the optional forecast advice need a Gemini API key. Saving receipts needs a Google service account. [docs/DEPLOY.md](docs/DEPLOY.md) shows where both go and how to deploy on Streamlit Community Cloud.
 
 ## What is in this repo
 
@@ -76,9 +76,9 @@ The charts, the forecasts and the explanations in English work with no keys. Rec
 ## Data and credits
 
 - CPI data: India's monthly Consumer Price Index (base 2012 = 100) from the National Statistical Office ([MOSPI](https://www.mospi.gov.in/)), accessed through the Reserve Bank of India's Database on Indian Economy ([DBIE](https://data.rbi.org.in/)).
-- Built with Streamlit, pandas, statsmodels and matplotlib. Gemini reads receipts and translates text. Google Sheets stores shared receipt rows.
+- Built with Streamlit, pandas, statsmodels and matplotlib. Gemini reads receipts, translates text and writes the optional forecast advice. Google Sheets stores shared receipt rows.
 - The source of `Resources/Inflation.jpg` is not recorded yet.
 
 ## License
 
-[MIT](LICENSE). MIT covers the code. The CPI data and the images in Resources/ stay under their owners' terms.
+[MIT](LICENSE) covers the code. The CPI data and the images in Resources/ stay under their owners' terms.
